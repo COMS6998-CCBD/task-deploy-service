@@ -8,6 +8,7 @@ __pycache__/
 
 # keys & secrets
 **/*.pem
+**/*aws*env
 
 # Distribution / packaging
 .Python
