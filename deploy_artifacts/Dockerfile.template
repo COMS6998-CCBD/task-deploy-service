@@ -1,0 +1,6 @@
+FROM ubuntu:latest
+WORKDIR /
+RUN apt-get update
+RUN apt-get install git curl wget
+COPY {SOURCE_DIR_PATH} {DESTINATION_DIR_PATH} 
+CMD {COMMAND_ARRAY}
