@@ -32,4 +32,4 @@ class S3Manager:
 
 
 
-S3 = S3Manager()
+S3M = S3Manager()
