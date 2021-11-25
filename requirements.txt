@@ -1,3 +1,4 @@
 docker
 boto3
 colorlog
+jsonpickle
