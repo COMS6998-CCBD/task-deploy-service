@@ -1,0 +1,6 @@
+version: "3.0"
+services:
+  standlone-hello-world:
+    image: 203304638817.dkr.ecr.us-east-1.amazonaws.com/ccbd-workstream:standalone_flask_test
+    ports:
+      - "5001:5001"
