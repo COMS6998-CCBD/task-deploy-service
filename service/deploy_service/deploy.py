@@ -38,7 +38,10 @@ def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str,
             line = line.replace("{DESTINATION_DIR_PATH}", ".")
 
         if "{COMMAND_ARRAY}" in line:
-            line = line.replace("{COMMAND_ARRAY}", str(shlex.split(command)))
+            cmd_arr = shlex.split(command)
+            cmd = ", ".join([f'"{cmd}"' for cmd in cmd_arr])
+            cmd = f"[{cmd}]"
+            line = line.replace("{COMMAND_ARRAY}", cmd)
             
         transformed_lines.append(line)
 

@@ -23,7 +23,8 @@ class DockerManager:
         imageObj, log_generator = self.client.images.build(
             path = str(dockerfile_filepath.parent),
             container_limits=self.default_build_args,
-            tag=tag)
+            tag=tag,
+            timeout=600)
             #nocache=True)
         duration = timer() - start_time
         LOG.info(f"Created image with id: [{imageObj.id}] with tags: [{imageObj.tags}]. Time taken: {duration:.4f}(s)")
