@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 WORKDIR /
-RUN apt-get update
-RUN apt-get install git curl wget
-RUN {LINUX_DEPENDENCIES}
-COPY {SOURCE_DIR_PATH} {DESTINATION_DIR_PATH} 
+RUN apt-get -y update
+RUN apt-get -y install git curl wget
+RUN apt-get -y install {LINUX_DEPENDENCIES}
+COPY {SOURCE_DIR_PATH} {DESTINATION_DIR_PATH}/
 CMD {COMMAND_ARRAY}

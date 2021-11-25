@@ -10,6 +10,7 @@ class S3Manager:
 
     def s3_to_local(self, s3_bucket: str, s3_path_prefix: str, local_dir: Path):
         s3_objects = self.client.list_objects_v2(Bucket=s3_bucket, Prefix=s3_path_prefix)
+        LOG.info(f"s3 objects gotten are: {s3_objects}")
         for s3_object in s3_objects["Contents"]:
             object_name =s3_object["Key"]
             local_file_name = local_dir.joinpath(object_name)

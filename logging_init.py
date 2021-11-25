@@ -17,7 +17,7 @@ console_handler.setLevel(logging.DEBUG)
 
 
 stream_formatter = colorlog.ColoredFormatter(
-    '%(log_color)s%(asctime)s %(levelname)-6s %(cyan)s%(name)-10s %(white)s%(message)s',
+    '%(log_color)s[%(asctime)s][%(levelname)-6s]%(cyan)s[%(name)-10s] - %(white)s%(message)s',
     "%H:%M:%S",
     log_colors={
         'DEBUG': 'blue',

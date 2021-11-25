@@ -1,19 +1,21 @@
+from re import LOCALE
 from typing import List
-from task_deploy_request import TaskDeployRequest
-from aws.s3_manager import S3M
+from service.deploy_service.task_deploy_request import TaskDeployRequest
+from service.aws.s3_manager import S3M
 from constants import *
 from pathlib import Path
 import shutil as sh
 import shlex
 import os
 import logging
-from docker.docker_manager import DM
+from service.docker.docker_manager import DM
 
 LOG = logging.getLogger("TDS")
 
-def prepare_dockerfile(command: str, linux_deps: List[str], source_dir: str, uniqueId: str) -> Path:
+def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str, uniqueId: str) -> Path:
     srcPath = Path(DOCKER_TEMPLATE_FILEPATH)
-    dstPath = Path(f"{LOCAL_SERVICE_STAGING_DIR}/{uniqueId}/Dockerfile")
+    dstPath = Path(f"{LOCAL_USER_STAGING_DIR}/{uniqueId}/Dockerfile")
+    os.makedirs(dstPath.parent, exist_ok=True)
     sh.copy(srcPath, dstPath)
 
     lines = []
@@ -22,20 +24,23 @@ def prepare_dockerfile(command: str, linux_deps: List[str], source_dir: str, uni
     
     transformed_lines = []
     for line in lines:
-        transformed_line = line
         if "{LINUX_DEPENDENCIES}" in line:
             # Do NOT add this line if there are no deps
             if linux_deps is None or len(linux_deps) == 0:
                 continue 
             else:
-                transformed_line = line.replace("{LINUX_DEPENDENCIES}", " ".join(linux_deps))
-        elif "{SOURCE_DIR_PATH}" in line:
-            transformed_line = line.replace("{SOURCE_DIR_PATH}", source_dir)
-        elif "{DESTINATION_DIR_PATH}" in line:
-            transformed_line = line.replace("{DESTINATION_DIR_PATH}", ".")
-        elif "{COMMAND_ARRAY}" in line:
-            transformed_line = line.replace("{COMMAND_ARRAY}", str(shlex.split(command)))
-        transformed_lines.append(transformed_line)
+                line = line.replace("{LINUX_DEPENDENCIES}", " ".join(linux_deps))
+
+        if "{SOURCE_DIR_PATH}" in line:
+            line = line.replace("{SOURCE_DIR_PATH}", files_dir_path)
+
+        if "{DESTINATION_DIR_PATH}" in line:
+            line = line.replace("{DESTINATION_DIR_PATH}", ".")
+
+        if "{COMMAND_ARRAY}" in line:
+            line = line.replace("{COMMAND_ARRAY}", str(shlex.split(command)))
+            
+        transformed_lines.append(line)
 
     with open(dstPath, "w") as f:
         f.writelines(transformed_lines)
@@ -45,9 +50,15 @@ def prepare_dockerfile(command: str, linux_deps: List[str], source_dir: str, uni
 
 
 def deploy(request: TaskDeployRequest):
-    local_user_dir = LOCAL_USER_STAGING_DIR + "/" + request.uniqueId
-    S3M.s3_to_local(request.s3_bucket, request.source_s3_path, local_user_dir)
-    dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, local_user_dir, request.uniqueId)
-    imageId = DM.create_image(dockerfile_filepath)
+    local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + request.uniqueId
+    local_user_dir_path = Path(local_user_dir_str)
+
+    sh.rmtree(local_user_dir_path)
+    S3M.s3_to_local(request.s3_bucket, request.source_s3_prefix, local_user_dir_path.joinpath("files"))
+
+    dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, "files", request.uniqueId)
+    imageId = DM.create_image(dockerfile_filepath=dockerfile_filepath, tag=request.uniqueId)
+    LOG.info(f"docker image id: {imageId}")
     containerId = DM.run(imageId)
+    LOG.info(f"docker container id: {containerId}")
     # then something about stats
