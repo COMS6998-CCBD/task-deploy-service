@@ -25,11 +25,14 @@ class DockerManager:
             path = str(dockerfile_filepath.parent),
             container_limits=self.default_build_args,
             tag=tag,
-            timeout=600)
+            timeout=600,
+            rm=True)
             #nocache=True)
         duration = timer() - start_time
-        LOG.info(f"Created image with id: [{imageObj.id}] with tags: [{imageObj.tags}]. Time taken: {duration:.4f}(s)")
-        return imageObj.id
+        image_id = imageObj.id
+        image_id = image_id.replace("sha256:", "")
+        LOG.info(f"Created image with id: [{image_id}] with tags: [{imageObj.tags}]. Time taken: {duration:.4f}(s)")
+        return image_id 
 
     def delete_image(self, imageId: str):
         self.client.images.remove(image=imageId)
@@ -43,7 +46,7 @@ class DockerManager:
             #restart_policy = self.default_restart_policy,
             detach=True # returns container object
         )
-        LOG.info(f"Initiated container run -> containerObj with id: [{containerObj.id}], imageId: [{containerObj.image}]")
+        LOG.info(f"Initiated container run -> containerObj with id: [{containerObj.id}], imageId: [{containerObj.image.id}]")
         return containerObj.id
 
     def prune_containers(self):
