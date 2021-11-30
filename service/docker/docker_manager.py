@@ -66,7 +66,8 @@ class DockerManager:
         container = self.client.containers.get(containerId)
         logs_str = container.logs(stdout=True, stderr=True, timestamps=True)
         LOG.info(f"got log str: [{logs_str}]")
-        with open(destination_output_filepath, "w") as f:
+        destination_output_filepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(destination_output_filepath, "w+") as f:
             for chunk in logs_str:
                 f.write(chunk)
         LOG.info(f"done copy_logs_to_file")
@@ -76,7 +77,8 @@ class DockerManager:
         container = self.client.containers.get(containerId)
         raw_stream, stats = container.get_archive(DOCKER_OUTPUT_DIR)
         LOG.info(f"Got stats: [{stats}]")
-        with open(destination_output_filepath, "wb") as f:
+        destination_output_filepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(destination_output_filepath, "wb+") as f:
             for chunk in raw_stream:
                 f.write(chunk)
         LOG.info(f"done copy_output_to_file")
@@ -85,6 +87,7 @@ class DockerManager:
         containters = self.client.containers.list(all=True, filters={"status": "exited"})
         exited_ids = [container.id for container in containters]
         LOG.info(f"Exited containers are: [{exited_ids}]")
+        return exited_ids
 
     def remove_containers(self, container_ids: List[str]):
         LOG.info(f"removing containers: [{container_ids}]")

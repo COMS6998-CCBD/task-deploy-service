@@ -12,6 +12,9 @@ LOG = logging.getLogger("TDS")
 class ExitServiceManager:
 
     def main(self):
+        # TEST - WORKS
+        # test_res = RM.test_the_db()
+
         # Get all exited containers from DB
         exited_executions = RM.get_exited_executions()
         db_exited_cids = set([exited_execution["docker_container_id"] for exited_execution in exited_executions])
@@ -19,18 +22,26 @@ class ExitServiceManager:
 
         # Mark newly exited containers as exited, if not already marked as EXITED in DB.
         docker_all_exited_cids = DM.get_exited_containers()
-        docker_newly_exited_cids = [cid for cid in docker_all_exited_cids if cid not in db_exited_cids]
-        db_resp = RM.get_executions(docker_newly_exited_cids)
+        # CURR:
+        # docker_newly_exited_cids = [cid for cid in docker_all_exited_cids if cid not in db_exited_cids]
+        docker_newly_exited_cids = docker_all_exited_cids
+
+        db_resp = RM.get_execution_info(docker_newly_exited_cids)
         cid_execid_map = {resp["docker_container_id"]: resp["exec_id"] for resp in db_resp}
 
         LOG.info(f"Newly exited docker container ids: [{docker_all_exited_cids}]")
         for cid in docker_newly_exited_cids:
+            if cid not in cid_execid_map:
+                LOG.warning(f"ContainerID [{cid}] not present in the cid_execid_map, ignoring it")
+                continue
+            # CURR: 
             RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.EXITED)
             LOG.info(f"\tInserted EXITED for [{cid}]")
         
 
         # Copy output and files from exited containers to local path
         # Fetch EXITED executions from DB again just liks that - we'll optimze later
+        LOG.info(f"Beginning the copy process")
         exited_executions = RM.get_exited_executions()
         for exited_execution in exited_executions:
             exec_id = exited_execution["exec_id"]
@@ -46,20 +57,27 @@ class ExitServiceManager:
 
             DM.copy_logs_to_file(docker_container_id, local_user_dir_path.joinpath("stdout.txt"))
             DM.copy_output_to_file(docker_container_id, local_user_dir_path.joinpath("output.tar"))
+            
+            # CURR: Let's try this in next iteration - let's keep everything local
             S3M.local_to_s3(s3bucket, destination_prefix, local_user_dir_path)
-
-            RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.COPIED)
+            # RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.COPIED)
             LOG.info(f"Inserted COPIED for [{cid}]")
 
         
         # Remove the containers
         # TODO: improve status updates to a single SQL query
-        DM.remove_containers(docker_all_exited_cids)
+        # CURR: 
+        # DM.remove_containers(docker_all_exited_cids)
+        LOG.info(f"Marking all docker exited containers as DELETED: [{docker_all_exited_cids}]")
         for cid in docker_all_exited_cids:
-            RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.DELETED)
+            # CURR: 
+            # RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.DELETED)
             LOG.info(f"\tInserted DELETED for [{cid}]")
 
         # Remove dangling images
         # TODO: Add opt for except UBUNTU
-        DM.prune_images()
+        # CURR: 
+        # DM.prune_images()
 
+
+EM = ExitServiceManager()

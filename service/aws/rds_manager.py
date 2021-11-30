@@ -81,7 +81,7 @@ class RDSManager:
             )
 
     # gets containers with EXITED as the last status
-    def get_exited_executions(self):
+    def get_exited_executions(self) -> Tuple[Dict]:
         with RDSConnection() as rc:
             res = rc.execute(
                 """
@@ -101,14 +101,24 @@ class RDSManager:
 
                 """
                 )
+            LOG.info(f"get_exited_executions res from DB: [{res}]")
             return res
 
-    def get_execution_info(container_ids: List[str]) -> List[Dict]:
+    def get_execution_info(self, container_ids: List[str]) -> Tuple[Dict]:
         cids_str = ", ".join([f"'{cid}'" for cid in container_ids])
-        with RDSConnection as rc:
+        QUERY = f"select * from execution_info where docker_container_id in ({cids_str})"
+        LOG.info(f"get_execution_info query: {QUERY}")
+        with RDSConnection() as rc:
+            res = rc.execute(QUERY)
+            LOG.info(f"get_execution_info res from DB: [{res}]")
+            return res
+
+
+    def test_the_db(self) -> Tuple[Dict]:
+        with RDSConnection() as rc:
             res = rc.execute(
-                "select * from execution_info where docker_container_id in (%s)",
-                (cids_str))
+                "select * from execution_info")
+            LOG.info(f"test_the_db res from DB: [{res}]")
             return res
 
 
