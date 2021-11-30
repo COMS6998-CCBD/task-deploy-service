@@ -13,3 +13,8 @@ os.makedirs(LOCAL_SERVICE_STAGING_DIR, exist_ok=True)
 # Dynamically resolve this to avoid problems
 DOCKER_TEMPLATE_FILEPATH = "./deploy_artifacts/Dockerfile.template"
 assert Path(DOCKER_TEMPLATE_FILEPATH).exists()
+
+
+RDS_HOSTNAME="ccdb-rdb-1.cdvaittpurwu.us-east-1.rds.amazonaws.com"
+RDS_PORT=3306
+RDS_DATABASE="workstream"

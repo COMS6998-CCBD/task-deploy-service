@@ -9,6 +9,9 @@ import shlex
 import os
 import logging
 from service.docker.docker_manager import DM
+from service.aws.rds_manager import RM
+import uuid
+from service.deploy_service.exec_status import EXEC_STATUS
 
 LOG = logging.getLogger("TDS")
 
@@ -53,15 +56,22 @@ def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str,
 
 
 def deploy(request: TaskDeployRequest):
-    local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + request.uniqueId
+    local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + request.task_id
     local_user_dir_path = Path(local_user_dir_str)
 
     sh.rmtree(local_user_dir_path)
     S3M.s3_to_local(request.s3_bucket, request.source_s3_prefix, local_user_dir_path.joinpath("files"))
 
-    dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, "files", request.uniqueId)
-    imageId = DM.create_image(dockerfile_filepath=dockerfile_filepath, tag=request.uniqueId)
-    LOG.info(f"docker image id: {imageId}")
+    exec_id = str(uuid.uuid4())
+    RM.insert_execution_id(request.task_id, exec_id)
+    LOG.info(f"linked task_id [{request.task_id}] to exec_id [{exec_id}]")
+
+    dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, "files", exec_id)
+    imageId = DM.create_image(dockerfile_filepath=dockerfile_filepath, tag=request.task_id)
+    LOG.info(f"for exec_id: [{exec_id}] docker image id: [{imageId}]")
+    RM.insert_execution_status(exec_id, EXEC_STATUS.CREATED)
+
     containerId = DM.run(imageId)
-    LOG.info(f"docker container id: {containerId}")
-    # then something about stats
+    LOG.info(f"for exec_id: [{exec_id}] docker container id: [{containerId}]")
+    RM.insert_execution_info(exec_id, imageId, containerId)
+    RM.insert_execution_status(exec_id, EXEC_STATUS.STARTED)
