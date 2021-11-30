@@ -23,11 +23,13 @@ class S3Manager:
     def local_to_s3(self, s3_bucket: str, s3_path_prefix: str, local_dir: Path):
         local_dir_str = str(local_dir)
         all_files = sorted(list(local_dir.rglob("**/*")))
+        LOG.info(f"Uploading files: {all_files}")
         for file in all_files:
             local_file_name = str(file)
             if file.is_dir():
                 local_file_name += "/"
-            s3_key = "".join(local_file_name.split(local_dir_str)[1:])
+            s3_key = s3_path_prefix
+            s3_key += "".join(local_file_name.split(local_dir_str)[1:])
             LOG.info(f"Uploading {local_file_name} to {s3_bucket}:{s3_key}")
             self.client.upload_file(Filename=local_file_name, Bucket=s3_bucket, Key=s3_key)
 

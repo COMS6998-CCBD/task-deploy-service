@@ -3,6 +3,6 @@ from enum import Enum
 class EXEC_STATUS(Enum):
     CREATED = "CREATED"
     STARTED = "STARTED"
-    EXECUTED = "EXECUTED"
+    EXITED = "EXITED"
     COPIED = "COPIED"
     DELETED = "DELETED"

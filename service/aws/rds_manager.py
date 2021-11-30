@@ -41,7 +41,7 @@ class RDSConnection:
             self.conn_id = None
 
 
-    def execute(self, query: str, values: Tuple) -> Tuple[Dict]:
+    def execute(self, query: str, values: Tuple = ()) -> Tuple[Dict]:
         results = ()
         with self.conn.cursor() as cursor:
             cursor.execute(query, values)
@@ -80,7 +80,8 @@ class RDSManager:
                 (exec_id, status.value)
             )
 
-    def get_exec_status(self):
+    # gets containers with EXITED as the last status
+    def get_exited_executions(self):
         with RDSConnection() as rc:
             res = rc.execute(
                 """
@@ -88,9 +89,26 @@ class RDSManager:
                         SELECT es.*, ROW_NUMBER() OVER (PARTITION BY exec_id ORDER BY modifiedTS DESC) AS rn
                         FROM execution_status AS es
                     )
-                    SELECT * FROM ordered_statuses WHERE rn = 1;
+                    SELECT DISTINCT ei.exec_id, os.status, ei.docker_container_id, tri.task_id, tri.s3_bucket, tri.destination_s3_prefix FROM ordered_statuses os
+                    JOIN execution_info ei
+                    ON ei.exec_id = os.exec_id 
+                    JOIN task_execution te
+                    on te.exec_id = ei.exec_id
+                    JOIN task_request_info tri
+                    ON tri.task_id = te.task_id
+                    WHERE os.rn = 1
+                    AND os.status='EXITED';
+
                 """
                 )
+            return res
+
+    def get_execution_info(container_ids: List[str]) -> List[Dict]:
+        cids_str = ", ".join([f"'{cid}'" for cid in container_ids])
+        with RDSConnection as rc:
+            res = rc.execute(
+                "select * from execution_info where docker_container_id in (%s)",
+                (cids_str))
             return res
 
 

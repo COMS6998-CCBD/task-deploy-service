@@ -3,6 +3,7 @@ import docker
 from pathlib import Path
 import logging
 from timeit import default_timer as timer
+from constants import DOCKER_OUTPUT_DIR
 
 LOG = logging.getLogger("TDS")
 
@@ -51,6 +52,7 @@ class DockerManager:
 
     def prune_containers(self):
         # remove unused containers
+        LOG.info(f"Pruning containers")
         self.client.containers.prune()
 
     def prune_images(self):
@@ -59,15 +61,37 @@ class DockerManager:
         # delete and then check image list for sanity
         self.client.images.prune(filters={"dangling": True})
 
-    def copy_logs(self, containerId: str, destination_dir: Path):
-        pass
+    def copy_logs_to_file(self, containerId: str, destination_output_filepath: Path):
+        LOG.info(f"starting copy_logs_to_file for containerId: [{containerId}] and destination_output_path: [{destination_output_filepath}]")
+        container = self.client.containers.get(containerId)
+        logs_str = container.logs(stdout=True, stderr=True, timestamps=True)
+        LOG.info(f"got log str: [{logs_str}]")
+        with open(destination_output_filepath, "w") as f:
+            for chunk in logs_str:
+                f.write(chunk)
+        LOG.info(f"done copy_logs_to_file")
 
-    def copy_output(self, containerId: str, destination_dir: Path):
-        pass
+    def copy_output_to_file(self, containerId: str, destination_output_filepath: Path):
+        LOG.info(f"starting copy_output_to_file for containerId: [{containerId}] and destination_output_path: [{destination_output_filepath}]")
+        container = self.client.containers.get(containerId)
+        raw_stream, stats = container.get_archive(DOCKER_OUTPUT_DIR)
+        LOG.info(f"Got stats: [{stats}]")
+        with open(destination_output_filepath, "wb") as f:
+            for chunk in raw_stream:
+                f.write(chunk)
+        LOG.info(f"done copy_output_to_file")
 
     def get_exited_containers(self) -> List[str]:
         containters = self.client.containers.list(all=True, filters={"status": "exited"})
-        return [container.id for container in containters]
+        exited_ids = [container.id for container in containters]
+        LOG.info(f"Exited containers are: [{exited_ids}]")
+
+    def remove_containers(self, container_ids: List[str]):
+        LOG.info(f"removing containers: [{container_ids}]")
+        for container_id in container_ids:
+            self.client.containters.get(container_id).remove()
+            LOG.info(f"\tRemoved container: [{container_id}]")
+
 
 
 DM = DockerManager()
