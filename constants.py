@@ -3,7 +3,7 @@ import shutil
 import os
 
 S3 = "S3"
-LOCAL_USER_STAGING_DIR = "/var/tmp/task-deploy-service/user"
+LOCAL_USER_STAGING_DIR = "/var/tmp/task-deploy-service/exec"
 LOCAL_SERVICE_STAGING_DIR = "/var/tmp/task-deploy-service/service"
 
 # ensure that the dirs are present at startup

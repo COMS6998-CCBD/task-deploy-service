@@ -1,3 +1,4 @@
+from typing import List
 import docker
 from pathlib import Path
 import logging
@@ -45,15 +46,25 @@ class DockerManager:
         LOG.info(f"Initiated container run -> containerObj with id: [{containerObj.id}], imageId: [{containerObj.image}]")
         return containerObj.id
 
-    def prune(self):
-        # replicate docker ps --filter status=exited -q | xargs docker rm
-        self.client.prune()
+    def prune_containers(self):
+        # remove unused containers
+        self.client.containers.prune()
 
-    def copy_logs(self, imageId: str, destination_dir: Path):
+    def prune_images(self):
+        # TODO: NOT_SURE replicate docker ps --filter status=exited -q | xargs docker rm
+        # Ideally we want to delete all unused images except ubuntu base image - cuz we need it for all images as base
+        # delete and then check image list for sanity
+        self.client.images.prune(filters={"dangling": True})
+
+    def copy_logs(self, containerId: str, destination_dir: Path):
         pass
 
-    def copy_output(self, imageId: str, destination_dir: Path):
+    def copy_output(self, containerId: str, destination_dir: Path):
         pass
+
+    def get_exited_containers(self) -> List[str]:
+        containters = self.client.containers.list(all=True, filters={"status": "exited"})
+        return [container.id for container in containters]
 
 
 DM = DockerManager()

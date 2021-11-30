@@ -15,9 +15,9 @@ from service.deploy_service.exec_status import EXEC_STATUS
 
 LOG = logging.getLogger("TDS")
 
-def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str, uniqueId: str) -> Path:
+def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str, exec_id: str) -> Path:
     srcPath = Path(DOCKER_TEMPLATE_FILEPATH)
-    dstPath = Path(f"{LOCAL_USER_STAGING_DIR}/{uniqueId}/Dockerfile")
+    dstPath = Path(f"{LOCAL_USER_STAGING_DIR}/{exec_id}/Dockerfile")
     os.makedirs(dstPath.parent, exist_ok=True)
     sh.copy(srcPath, dstPath)
 
@@ -27,6 +27,7 @@ def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str,
     
     transformed_lines = []
     for line in lines:
+        LOG.info(f"Before line: [{line}]")
         if "{LINUX_DEPENDENCIES}" in line:
             # Do NOT add this line if there are no deps
             if linux_deps is None or len(linux_deps) == 0:
@@ -35,6 +36,7 @@ def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str,
                 line = line.replace("{LINUX_DEPENDENCIES}", " ".join(linux_deps))
 
         if "{SOURCE_DIR_PATH}" in line:
+            LOG.info(f"replacing source with [{files_dir_path}]")
             line = line.replace("{SOURCE_DIR_PATH}", files_dir_path)
 
         if "{DESTINATION_DIR_PATH}" in line:
@@ -46,28 +48,31 @@ def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str,
             cmd = f"[{cmd}]"
             line = line.replace("{COMMAND_ARRAY}", cmd)
             
+        LOG.info(f"After line: [{line}]")
         transformed_lines.append(line)
 
     with open(dstPath, "w") as f:
         f.writelines(transformed_lines)
 
-    LOG.info(f"Wrote Dockerfile for uniqueId: {uniqueId} as follows: \n{''.join(transformed_lines)}")
+    LOG.info(f"Wrote Dockerfile for uniqueId: {exec_id} as follows: \n{''.join(transformed_lines)}")
     return dstPath
 
 
 def deploy(request: TaskDeployRequest):
-    local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + request.task_id
-    local_user_dir_path = Path(local_user_dir_str)
-
-    sh.rmtree(local_user_dir_path)
-    S3M.s3_to_local(request.s3_bucket, request.source_s3_prefix, local_user_dir_path.joinpath("files"))
-
+    RM.insert_task(request)
     exec_id = str(uuid.uuid4())
     RM.insert_execution_id(request.task_id, exec_id)
     LOG.info(f"linked task_id [{request.task_id}] to exec_id [{exec_id}]")
 
+    local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + exec_id
+    local_user_dir_path = Path(local_user_dir_str)
+    sh.rmtree(local_user_dir_path, ignore_errors=True)
+    S3M.s3_to_local(request.s3_bucket, request.source_s3_prefix, local_user_dir_path.joinpath("files"))
+
+    
+
     dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, "files", exec_id)
-    imageId = DM.create_image(dockerfile_filepath=dockerfile_filepath, tag=request.task_id)
+    imageId = DM.create_image(dockerfile_filepath=dockerfile_filepath, tag=exec_id)
     LOG.info(f"for exec_id: [{exec_id}] docker image id: [{imageId}]")
     RM.insert_execution_status(exec_id, EXEC_STATUS.CREATED)
 
