@@ -59,7 +59,7 @@ class DockerManager:
         # TODO: NOT_SURE replicate docker ps --filter status=exited -q | xargs docker rm
         # Ideally we want to delete all unused images except ubuntu base image - cuz we need it for all images as base
         # delete and then check image list for sanity
-        self.client.images.prune(filters={"dangling": True})
+        self.client.images.prune()
 
     def copy_logs_to_file(self, containerId: str, destination_output_filepath: Path):
         LOG.info(f"starting copy_logs_to_file for containerId: [{containerId}] and destination_output_path: [{destination_output_filepath}]")
@@ -92,7 +92,7 @@ class DockerManager:
     def remove_containers(self, container_ids: List[str]):
         LOG.info(f"removing containers: [{container_ids}]")
         for container_id in container_ids:
-            self.client.containters.get(container_id).remove()
+            self.client.containers.get(container_id).remove()
             LOG.info(f"\tRemoved container: [{container_id}]")
 
 
