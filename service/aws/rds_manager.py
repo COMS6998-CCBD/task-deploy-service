@@ -80,5 +80,18 @@ class RDSManager:
                 (exec_id, status.value)
             )
 
+    def get_exec_status(self):
+        with RDSConnection() as rc:
+            res = rc.execute(
+                """
+                    WITH ordered_statuses AS (
+                        SELECT es.*, ROW_NUMBER() OVER (PARTITION BY exec_id ORDER BY modifiedTS DESC) AS rn
+                        FROM execution_status AS es
+                    )
+                    SELECT * FROM ordered_statuses WHERE rn = 1;
+                """
+                )
+            return res
+
 
 RM = RDSManager()

@@ -27,7 +27,7 @@ def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str,
     
     transformed_lines = []
     for line in lines:
-        LOG.info(f"Before line: [{line}]")
+        LOG.debug(f"Before line: [{line}]")
         if "{LINUX_DEPENDENCIES}" in line:
             # Do NOT add this line if there are no deps
             if linux_deps is None or len(linux_deps) == 0:
@@ -47,8 +47,11 @@ def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str,
             cmd = ", ".join([f'"{cmd}"' for cmd in cmd_arr])
             cmd = f"[{cmd}]"
             line = line.replace("{COMMAND_ARRAY}", cmd)
+
+        if "{COMMAND}" in line:
+            line = line.replace("{COMMAND}", command)
             
-        LOG.info(f"After line: [{line}]")
+        LOG.debug(f"After line: [{line}]")
         transformed_lines.append(line)
 
     with open(dstPath, "w") as f:
