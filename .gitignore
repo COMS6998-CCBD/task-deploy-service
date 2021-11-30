@@ -9,6 +9,7 @@ __pycache__/
 # keys & secrets
 **/*.pem
 **/*aws*env
+credentials/
 
 # Distribution / packaging
 .Python

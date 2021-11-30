@@ -1,5 +1,6 @@
-docker
-boto3
-colorlog
-jsonpickle
-flask
+docker==5.0.3
+boto3==1.20.13
+colorlog==6.6.0
+jsonpickle==2.0.0
+flask==2.0.2
+pymysql==1.0.2
