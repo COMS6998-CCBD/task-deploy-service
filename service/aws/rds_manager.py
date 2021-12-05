@@ -102,7 +102,7 @@ class RDSManager:
 
                 """
                 )
-            LOG.info(f"get_exited_executions res from DB: [{res}]")
+            # LOG.info(f"get_exited_executions res from DB: [{res}]")
             return res
 
     def get_execution_info(self, container_ids: List[str]) -> Tuple[Dict]:

@@ -21,3 +21,6 @@ class TaskDeployRequest:
         self.destination_s3_prefix = destination_s3_prefix
         self.command = command
         self.linux_dependencies = linux_dependencies
+        if type(self.linux_dependencies) == type(""):
+            self.linux_dependencies = self.linux_dependencies.split(",")
+            self.linux_dependencies = [dep.strip() for dep in self.linux_dependencies]

@@ -2,6 +2,7 @@ import logging_init # This needs to be first
 import os
 import logging
 import pymysql
+from constants import *
 
 RDS_HOSTNAME="ccdb-rdb-1.cdvaittpurwu.us-east-1.rds.amazonaws.com"
 RDS_PORT=3306
@@ -25,6 +26,11 @@ def cleanup_db():
         cursor.execute("delete from task_request_info", ())
 
     LOG.info("cleaned DB...")
+
+def cleanupp_dirs():
+    os.system(f"rm -rf {LOCAL_USER_STAGING_DIR}")
+    os.system(f"rm -rf {LOCAL_SERVICE_STAGING_DIR}")
+    LOG.info("cleaned dirs")
 
 def cleanup_docker():
     os.system("docker image prune -a -f")

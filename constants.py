@@ -10,6 +10,7 @@ DOCKER_OUTPUT_DIR = "wrkdir/output"
 # ensure that the dirs are present at startup
 os.makedirs(LOCAL_USER_STAGING_DIR, exist_ok=True)
 os.makedirs(LOCAL_SERVICE_STAGING_DIR, exist_ok=True)
+print(f"Ensured health of dir {LOCAL_SERVICE_STAGING_DIR} and {LOCAL_USER_STAGING_DIR}")
 
 # Dynamically resolve this to avoid problems
 DOCKER_TEMPLATE_FILEPATH = "./deploy_artifacts/Dockerfile.template"

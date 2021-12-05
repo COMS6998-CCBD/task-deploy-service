@@ -18,18 +18,19 @@ class ExitServiceManager:
         # Get all exited containers from DB
         exited_executions = RM.get_exited_executions()
         db_exited_cids = set([exited_execution["docker_container_id"] for exited_execution in exited_executions])
-        LOG.info(f"DB exited executions: [{db_exited_cids}]")
+        LOG.info(f"DB exited executions container ids: [{db_exited_cids}]")
 
         # Mark newly exited containers as exited, if not already marked as EXITED in DB.
         docker_all_exited_cids = DM.get_exited_containers()
+        LOG.info(f"Docker all exited container ids: [{docker_all_exited_cids}]")
         docker_newly_exited_cids = [cid for cid in docker_all_exited_cids if cid not in db_exited_cids]
-        docker_newly_exited_cids = docker_all_exited_cids
+        LOG.info(f"Docker newly exited container ids: [{docker_newly_exited_cids}]")
 
+        
         if len(docker_newly_exited_cids) != 0:
             db_resp = RM.get_execution_info(docker_newly_exited_cids)
             cid_execid_map = {resp["docker_container_id"]: resp["exec_id"] for resp in db_resp}
 
-            LOG.info(f"Newly exited docker container ids: [{docker_all_exited_cids}]")
             for cid in docker_newly_exited_cids:
                 if cid not in cid_execid_map:
                     LOG.warning(f"ContainerID [{cid}] not present in the cid_execid_map, ignoring it")
@@ -68,15 +69,17 @@ class ExitServiceManager:
                 LOG.info(f"Inserted COPIED for [{cid}]")
 
         
-            # Remove the containers
-            # TODO: improve status updates to a single SQL query
+        # Remove the containers
+        # TODO: improve status updates to a single SQL query
+        # CURR: 
+        LOG.info(f"Removing containers: [{docker_all_exited_cids}]")
+        DM.remove_containers(docker_all_exited_cids)
+        
+        LOG.info(f"Marking all docker exited containers as DELETED: [{docker_all_exited_cids}]")
+        for cid in docker_all_exited_cids:
             # CURR: 
-            DM.remove_containers(docker_all_exited_cids)
-            LOG.info(f"Marking all docker exited containers as DELETED: [{docker_all_exited_cids}]")
-            for cid in docker_all_exited_cids:
-                # CURR: 
-                RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.DELETED)
-                LOG.info(f"\tInserted DELETED for [{cid}]")
+            RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.DELETED)
+            LOG.info(f"\tInserted DELETED for [{cid}]")
 
         # Remove dangling images
         # TODO: Add opt for except UBUNTU
