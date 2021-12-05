@@ -14,5 +14,5 @@ if __name__ == "__main__":
             traceback.print_exc()
             print("\n\n\n\n")
         LOG.info("sleeping.....")
-        time.sleep(60)
+        time.sleep(10)
         LOG.info("woke up.....")

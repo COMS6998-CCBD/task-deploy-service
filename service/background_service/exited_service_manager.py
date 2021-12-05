@@ -47,6 +47,11 @@ class ExitServiceManager:
                 docker_container_id = exited_execution["docker_container_id"]
                 destination_prefix = exited_execution["destination_s3_prefix"]
                 s3bucket = exited_execution["s3_bucket"]
+
+                if docker_container_id not in docker_all_exited_cids:
+                    LOG.warning(f"Docker container {docker_container_id} from DB is not present in ec2!!")
+                    continue
+
                 LOG.info(f"Working copy for exited_container exec_id: [{exec_id}], container_id: [{docker_container_id}], destination_prefix: [{destination_prefix}] in s3 bucket: [{s3bucket}]")
 
                 local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + exec_id + "/output" 
