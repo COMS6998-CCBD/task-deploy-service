@@ -55,9 +55,10 @@ class RDSManager:
 
     def insert_task(self, tdr: TaskDeployRequest):
         with RDSConnection() as rc:
+            # LOG.info(f"Data is : {(tdr.task_id, tdr.task_name, tdr.user_id, tdr.s3_bucket, tdr.source_s3_prefix, tdr.destination_s3_prefix, tdr.command, ' '.join(tdr.linux_dependencies))}")
             rc.execute(
-                "insert into task_request_info (task_id, user_id, s3_bucket, source_s3_prefix, destination_s3_prefix, command, linux_dependencies) values (%s, %s, %s, %s, %s, %s, %s)",
-                (tdr.task_id, tdr.user_id, tdr.s3_bucket, tdr.source_s3_prefix, tdr.destination_s3_prefix, tdr.command, " ".join(tdr.linux_dependencies)))
+                "insert into task_request_info (task_id, task_name, user_id, s3_bucket, source_s3_prefix, destination_s3_prefix, command, linux_dependencies) values (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (tdr.task_id, tdr.task_name, tdr.user_id, tdr.s3_bucket, tdr.source_s3_prefix, tdr.destination_s3_prefix, tdr.command, " ".join(tdr.linux_dependencies)))
 
     def insert_execution_id(self, task_id: str, exec_id: str):
         with RDSConnection() as rc:

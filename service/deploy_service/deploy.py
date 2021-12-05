@@ -12,6 +12,7 @@ from service.docker.docker_manager import DM
 from service.aws.rds_manager import RM
 import uuid
 from service.deploy_service.exec_status import EXEC_STATUS
+import zipfile
 
 LOG = logging.getLogger("TDS")
 
@@ -61,25 +62,35 @@ def prepare_dockerfile(command: str, linux_deps: List[str], files_dir_path: str,
     return dstPath
 
 
+def unzip_files(local_user_files_dir_path: Path):
+    zip_files = list(local_user_files_dir_path.glob("*.zip")) + list(local_user_files_dir_path.glob("*.7z"))
+    for zip_file in zip_files:
+        with zipfile.ZipFile(zip_file, "r") as zip_ref:
+            LOG.info(f"Extracting {zip_file} to {zip_file.parent}")
+            zip_ref.extractall(zip_file.parent)
+
+
 def deploy(request: TaskDeployRequest):
     RM.insert_task(request)
-    exec_id = str(uuid.uuid4())
-    RM.insert_execution_id(request.task_id, exec_id)
-    LOG.info(f"linked task_id [{request.task_id}] to exec_id [{exec_id}]")
+    RM.insert_execution_id(request.task_id, request.exec_id)
+    LOG.info(f"linked task_id [{request.task_id}] to exec_id [{request.exec_id}]")
 
-    local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + exec_id
+    local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + request.exec_id
     local_user_dir_path = Path(local_user_dir_str)
     sh.rmtree(local_user_dir_path, ignore_errors=True)
-    S3M.s3_to_local(request.s3_bucket, request.source_s3_prefix, local_user_dir_path.joinpath("files"))
+
+    local_user_files_dir_path = local_user_dir_path.joinpath("files")
+    S3M.s3_to_local(request.s3_bucket, request.source_s3_prefix, local_user_files_dir_path)
+    unzip_files(local_user_files_dir_path)
 
     
 
-    dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, "files", exec_id)
-    imageId = DM.create_image(dockerfile_filepath=dockerfile_filepath, tag=exec_id)
-    LOG.info(f"for exec_id: [{exec_id}] docker image id: [{imageId}]")
-    RM.insert_execution_status(exec_id, EXEC_STATUS.CREATED)
+    dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, "files", request.exec_id)
+    imageId = DM.create_image(dockerfile_filepath=dockerfile_filepath, tag=request.exec_id)
+    LOG.info(f"for exec_id: [{request.exec_id}] docker image id: [{imageId}]")
+    RM.insert_execution_status(request.exec_id, EXEC_STATUS.CREATED)
 
     containerId = DM.run(imageId)
-    LOG.info(f"for exec_id: [{exec_id}] docker container id: [{containerId}]")
-    RM.insert_execution_info(exec_id, imageId, containerId)
-    RM.insert_execution_status(exec_id, EXEC_STATUS.STARTED)
+    LOG.info(f"for exec_id: [{request.exec_id}] docker container id: [{containerId}]")
+    RM.insert_execution_info(request.exec_id, imageId, containerId)
+    RM.insert_execution_status(request.exec_id, EXEC_STATUS.STARTED)

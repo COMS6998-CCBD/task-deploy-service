@@ -19,6 +19,7 @@ def hello_world():
 def deploy_task():
     request_json = flask_request.json
     LOG.info(f"JSON request recevied: {request_json}")
+    # LOG.info(f"JSON request data recevied: {flask_request.data}")
     try:
         request = TaskDeployRequest(**request_json)
         deploy(request)
