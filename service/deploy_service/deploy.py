@@ -66,9 +66,9 @@ def unzip_files(local_user_files_dir_path: Path):
     zip_files = list(local_user_files_dir_path.rglob("*.zip")) + list(local_user_files_dir_path.rglob("*.7z"))
     for zip_file in zip_files:
         with zipfile.ZipFile(zip_file, "r") as zip_ref:
-            extract_dir = zip_file.parent.joinpath(zip_file.stem)
-            LOG.info(f"Extracting {zip_file} to {extract_dir}")
-            zip_ref.extractall(extract_dir)
+            # extract_dir = zip_file.parent.joinpath(zip_file.stem)
+            LOG.info(f"Extracting {zip_file} to {zip_file.parent}")
+            zip_ref.extractall(zip_file.parent)
         zip_file.unlink()
 
 

@@ -69,17 +69,18 @@ class ExitServiceManager:
                 LOG.info(f"Inserted COPIED for [{cid}]")
 
         
-        # Remove the containers
-        # TODO: improve status updates to a single SQL query
-        # CURR: 
-        LOG.info(f"Removing containers: [{docker_all_exited_cids}]")
-        DM.remove_containers(docker_all_exited_cids)
-        
-        LOG.info(f"Marking all docker exited containers as DELETED: [{docker_all_exited_cids}]")
-        for cid in docker_all_exited_cids:
+            # Remove the containers
+            # TODO: improve status updates to a single SQL query
             # CURR: 
-            RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.DELETED)
-            LOG.info(f"\tInserted DELETED for [{cid}]")
+            LOG.info(f"Removing all exited containers: [{docker_all_exited_cids}]")
+            DM.remove_containers(docker_all_exited_cids)
+            
+            # TODO: Make all the removed as delete in DB
+            LOG.info(f"Marking docker newly exited containers as DELETED: [{docker_newly_exited_cids}]")
+            for cid in docker_newly_exited_cids:
+                # CURR: 
+                RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.DELETED)
+                LOG.info(f"\tInserted DELETED for [{cid}]")
 
         # Remove dangling images
         # TODO: Add opt for except UBUNTU
