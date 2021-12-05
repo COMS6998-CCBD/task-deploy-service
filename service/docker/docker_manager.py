@@ -67,9 +67,8 @@ class DockerManager:
         logs_str = container.logs(stdout=True, stderr=True, timestamps=True)
         LOG.info(f"got log str: [{logs_str}]")
         destination_output_filepath.parent.mkdir(parents=True, exist_ok=True)
-        with open(destination_output_filepath, "w+") as f:
-            for chunk in logs_str:
-                f.write(chunk)
+        with open(destination_output_filepath, "wb+") as f:
+            f.write(logs_str)
         LOG.info(f"done copy_logs_to_file")
 
     def copy_output_to_file(self, containerId: str, destination_output_filepath: Path):
