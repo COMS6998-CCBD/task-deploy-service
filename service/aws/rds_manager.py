@@ -7,6 +7,8 @@ from constants import RDS_HOSTNAME, RDS_PORT, RDS_DATABASE
 from service.deploy_service.task_deploy_request import TaskDeployRequest
 from service.deploy_service.exec_status import EXEC_STATUS
 import logging
+import datetime
+import croniter
 
 LOG = logging.getLogger("TDS")
 
@@ -53,12 +55,53 @@ class RDSManager:
     def __init__(self):
         pass
 
+    def delete_task_schedule(self,task_id):
+        with RDSConnection() as rc:
+            result = rc.execute('delete from tasks_to_schedule as ts where ts.task_id = %s',task_id)
+            LOG.info(f"result = {result}")
+
+    def get_task_details(self,task_id):
+        with RDSConnection() as rc:
+            LOG.info(f"get task task_id = {task_id}")
+            # LOG.info(f'select * from task_request_info as tr where tr.task_id = {task_id}')
+            result = rc.execute('select * from task_request_info as tr where tr.task_id = %s',task_id)
+            LOG.info(f"task details result = {result}")
+            return result
+
+    def get_all_tasks_to_schedule(self):
+        with RDSConnection() as rc:
+             cur_time = datetime.datetime.now()
+             LOG.info(f"cur_time = {cur_time}")
+             result = rc.execute('select ts.task_id from tasks_to_schedule as ts where ts.next_schedule_time<=%s',cur_time)
+             LOG.info(f"result = {result}")
+             return result
+
+    def insert_task_schedule(self,tdr:TaskDeployRequest):
+        with RDSConnection() as rc:
+            cur_time = datetime.datetime.now()
+            if tdr.cron_expression:
+                LOG.info(f"inside insert task schedule cronexpor = {tdr.cron_expression}")
+                cron = croniter.croniter(tdr.cron_expression, cur_time)
+                scheduled_time = cron.get_next(datetime.datetime)
+            else:
+                '''for non-cron jobs inserting the next scheduled time as 10 mins from now'''
+                scheduled_time = cur_time+datetime.timedelta(minutes=1)
+            
+            rc.execute("insert into tasks_to_schedule(task_id,next_schedule_time) values(%s,%s)",(tdr.task_id,scheduled_time))
+            
+
     def insert_task(self, tdr: TaskDeployRequest):
         with RDSConnection() as rc:
             # LOG.info(f"Data is : {(tdr.task_id, tdr.task_name, tdr.user_id, tdr.s3_bucket, tdr.source_s3_prefix, tdr.destination_s3_prefix, tdr.command, ' '.join(tdr.linux_dependencies))}")
-            rc.execute(
-                "insert into task_request_info (task_id, task_name, user_id, s3_bucket, source_s3_prefix, destination_s3_prefix, command, linux_dependencies) values (%s, %s, %s, %s, %s, %s, %s, %s)",
-                (tdr.task_id, tdr.task_name, tdr.user_id, tdr.s3_bucket, tdr.source_s3_prefix, tdr.destination_s3_prefix, tdr.command, " ".join(tdr.linux_dependencies)))
+            if tdr.cron_expression:
+                LOG.info(f" linux_dependencies = {tdr.linux_dependencies}")
+                rc.execute(
+                "insert into task_request_info (task_id, task_name, user_id, s3_bucket, source_s3_prefix, command, linux_dependencies,cron_expression) values (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (tdr.task_id, tdr.task_name, tdr.user_id, tdr.s3_bucket, tdr.source_s3_prefix, tdr.command, " ".join(tdr.linux_dependencies),tdr.cron_expression))
+            else:
+                rc.execute(
+                "insert into task_request_info (task_id, task_name, user_id, s3_bucket, source_s3_prefix, command, linux_dependencies) values (%s, %s, %s, %s, %s, %s, %s)",
+                (tdr.task_id, tdr.task_name, tdr.user_id, tdr.s3_bucket, tdr.source_s3_prefix, tdr.command, " ".join(tdr.linux_dependencies)))
 
     def insert_execution_id(self, task_id: str, exec_id: str):
         with RDSConnection() as rc:
@@ -90,7 +133,7 @@ class RDSManager:
                         SELECT es.*, ROW_NUMBER() OVER (PARTITION BY exec_id ORDER BY modifiedTS DESC) AS rn
                         FROM execution_status AS es
                     )
-                    SELECT DISTINCT ei.exec_id, os.status, ei.docker_container_id, tri.task_id, tri.s3_bucket, tri.destination_s3_prefix FROM ordered_statuses os
+                    SELECT DISTINCT ei.exec_id, os.status, ei.docker_container_id, tri.task_id, tri.s3_bucket FROM ordered_statuses os
                     JOIN execution_info ei
                     ON ei.exec_id = os.exec_id 
                     JOIN task_execution te

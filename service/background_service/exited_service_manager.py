@@ -46,7 +46,8 @@ class ExitServiceManager:
             for exited_execution in exited_executions:
                 exec_id = exited_execution["exec_id"]
                 docker_container_id = exited_execution["docker_container_id"]
-                destination_prefix = exited_execution["destination_s3_prefix"]
+                # destination_prefix = exited_execution["destination_s3_prefix"]
+                destination_prefix = exited_execution["task_id"]+"/"+exec_id+"/output"
                 s3bucket = exited_execution["s3_bucket"]
 
                 if docker_container_id not in docker_all_exited_cids:
@@ -65,6 +66,10 @@ class ExitServiceManager:
                 
                 # CURR: Let's try this in next iteration - let's keep everything local
                 S3M.local_to_s3(s3bucket, destination_prefix, local_user_dir_path)
+                # TODO: Key errors here
+                if cid not in cid_execid_map:
+                    LOG.warning(f"container id {cid} not in map!!!")
+                    continue
                 RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.COPIED)
                 LOG.info(f"Inserted COPIED for [{cid}]")
 
@@ -78,7 +83,10 @@ class ExitServiceManager:
             # TODO: Make all the removed as delete in DB
             LOG.info(f"Marking docker newly exited containers as DELETED: [{docker_newly_exited_cids}]")
             for cid in docker_newly_exited_cids:
-                # CURR: 
+                # TODO: Key errors here
+                if cid not in cid_execid_map:
+                    LOG.warning(f"container id {cid} not in map!!!")
+                    continue
                 RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.DELETED)
                 LOG.info(f"\tInserted DELETED for [{cid}]")
 

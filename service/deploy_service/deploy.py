@@ -73,7 +73,8 @@ def unzip_files(local_user_files_dir_path: Path):
 
 
 def deploy(request: TaskDeployRequest):
-    RM.insert_task(request)
+    '''no longer inserts new task here taken care by submit task'''
+    # RM.insert_task(request)
     RM.insert_execution_id(request.task_id, request.exec_id)
     LOG.info(f"linked task_id [{request.task_id}] to exec_id [{request.exec_id}]")
 
