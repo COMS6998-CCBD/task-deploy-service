@@ -2,7 +2,7 @@ from service.aws.rds_manager import RM
 from service.docker.docker_manager import DM
 from service.aws.s3_manager import S3M
 from service.deploy_service.exec_status import EXEC_STATUS
-from constants import LOCAL_USER_STAGING_DIR, DOCKER_OUTPUT_DIR, METRICS_FILE_NAME
+from constants import LOCAL_USER_STAGING_DIR, DOCKER_OUTPUT_DIR, METRICS_FILE_NAME, METRICS_OUTPUT_FILE_NAME
 from pathlib import Path
 import shutil as sh
 import logging
@@ -64,6 +64,7 @@ class ExitServiceManager:
                 DM.copy_logs(docker_container_id, local_user_dir_path.joinpath("stdout.txt"))
                 DM.copy_file(docker_container_id, local_user_dir_path.joinpath("output.tar"), DOCKER_OUTPUT_DIR)
                 DM.copy_file(docker_container_id, local_user_dir_path.joinpath("metrics.txt"), METRICS_FILE_NAME)
+                DM.copy_file(docker_container_id, local_user_dir_path.joinpath("metrics_output.txt"), METRICS_OUTPUT_FILE_NAME)
                 
                 # CURR: Let's try this in next iteration - let's keep everything local
                 S3M.local_to_s3(s3bucket, destination_prefix, local_user_dir_path)
