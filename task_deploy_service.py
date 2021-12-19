@@ -53,4 +53,4 @@ def deploy_task():
 if __name__ == '__main__':
     print("***CALLED FROM MAIN***")
     # start_background_services()
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=False)

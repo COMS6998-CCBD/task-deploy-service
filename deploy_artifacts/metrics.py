@@ -31,15 +31,16 @@ def get_memory_usage():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 1:
+    print("ARGS: ", sys.argv)
+    if len(sys.argv) < 2:
         print("Incorrect usage.\npython ./metric.py <file_to_write> <interval>.\nInterval is optional and defaults to 1s.")
         exit(1)
 
-    file_to_write = sys.argv[0]
+    file_to_write = sys.argv[1]
     interval_ms = 1000
 
-    if len(sys.argv) >= 2:
-        interval_ms = int(sys.argv[1])
+    if len(sys.argv) >= 3:
+        interval_ms = int(sys.argv[2])
 
     while True:
         cpu_perc = cpu_details(interval_ms)
