@@ -6,4 +6,4 @@ RUN apt-get -y install git curl wget python3.9
 RUN apt-get -y install {LINUX_DEPENDENCIES}
 RUN mkdir output
 COPY {SOURCE_DIR_PATH} {DESTINATION_DIR_PATH}/
-ENTRYPOINT python3.9 ./metrics.py & {COMMAND}
+ENTRYPOINT python3.9 ./metrics.py ./metrics.txt & {COMMAND}

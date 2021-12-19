@@ -6,6 +6,7 @@ S3 = "S3"
 LOCAL_USER_STAGING_DIR = "/var/tmp/task-deploy-service/exec"
 LOCAL_SERVICE_STAGING_DIR = "/var/tmp/task-deploy-service/service"
 DOCKER_OUTPUT_DIR = "wrkdir/output"
+METRICS_FILE_NAME = "wrkdir/metrics.txt"
 
 # ensure that the dirs are present at startup
 os.makedirs(LOCAL_USER_STAGING_DIR, exist_ok=True)
