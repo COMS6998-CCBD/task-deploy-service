@@ -86,6 +86,9 @@ def deploy(request: TaskDeployRequest):
     S3M.s3_to_local(request.s3_bucket, request.source_s3_prefix, local_user_files_dir_path)
     unzip_files(local_user_files_dir_path)
 
+    # copy metrics script as well
+    sh.copyfile(METRICS_SCRIPT_FILEPATH, local_user_files_dir_path.joinpath("metrics.py"))
+    LOG.info(f"Copied metrics.py to {local_user_files_dir_path}")
     
 
     dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, "files", request.exec_id)
