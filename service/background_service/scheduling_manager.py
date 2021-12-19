@@ -12,7 +12,7 @@ LOG = logging.getLogger("TDS")
 
 class SchedulingManager:
     def __init__(self):
-        pass
+        self.EC2_SCHED_ID = str(uuid.uuid4())
 
     def get_req_task_details(self, task_full_details):
         req_fields = ['user_id','task_id','task_name','exec_id','s3_bucket','source_s3_prefix','command','cron_expression','linux_dependencies']
@@ -23,9 +23,11 @@ class SchedulingManager:
 
     def schedule(self):
         '''get all the jobs to be scheduled'''
-        task_ids = RM.get_all_tasks_to_schedule()
+        RM.update_task_to_schedule(self.EC2_SCHED_ID)
+        task_ids = RM.get_all_tasks_to_schedule(self.EC2_SCHED_ID)
         for task_id_dict in task_ids:
             task_id = task_id_dict['task_id']
+            LOG.info(f"scheduler picking up task_id: {task_id}")
             '''get single task details and deploy the job'''
             task_full_details = RM.get_task_details(task_id)[0]
             exec_id = str(uuid.uuid4())

@@ -68,11 +68,11 @@ class RDSManager:
             LOG.info(f"task details result = {result}")
             return result
 
-    def get_all_tasks_to_schedule(self):
+    def get_all_tasks_to_schedule(self, ec2id: str) -> Tuple[Dict]:
         with RDSConnection() as rc:
              cur_time = datetime.datetime.now()
              LOG.info(f"cur_time = {cur_time}")
-             result = rc.execute('select ts.task_id from tasks_to_schedule as ts where ts.next_schedule_time<=%s',cur_time)
+             result = rc.execute("select ts.task_id from tasks_to_schedule as ts where ts.next_schedule_time<=%s and ts.ec2id=%s", (cur_time, ec2id))
              LOG.info(f"result = {result}")
              return result
 
@@ -163,6 +163,21 @@ class RDSManager:
             res = rc.execute(
                 "select * from execution_info")
             LOG.info(f"test_the_db res from DB: [{res}]")
+            return res
+
+
+    def update_task_to_schedule(self, ec2id: str) -> Tuple[Dict]:
+        with RDSConnection() as rc:
+            query = """
+                    update tasks_to_schedule set ec2id=%s where task_id in (
+                        select task_id from (
+                            select task_id from tasks_to_schedule as ts where ts.ec2id is null limit 1
+                        ) tmp 
+                    )
+                """
+            LOG.info(f"QUERY to execute: {query} with ec2id: {ec2id}")
+            res = rc.execute(query, (ec2id))
+            LOG.info(f"updated task to schedule with {ec2id}, results: {res}")
             return res
 
 
