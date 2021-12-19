@@ -1,5 +1,6 @@
 import time
 import sys
+from pathlib import Path
 
 
 def get_int_val(cgroup_suffix: str) -> int:
@@ -36,18 +37,22 @@ if __name__ == "__main__":
         print("Incorrect usage.\npython ./metric.py <file_to_write> <interval>.\nInterval is optional and defaults to 1s.")
         exit(1)
 
-    file_to_write = sys.argv[1]
+    file_to_write = Path(sys.argv[1])
     interval_ms = 1000
 
     if len(sys.argv) >= 3:
         interval_ms = int(sys.argv[2])
 
     print(f"writing to: {file_to_write} and interval_ms: {interval_ms}")
+    if file_to_write.exists():
+        file_to_write.unlink()
+
 
     while True:
         cpu_perc = cpu_details(interval_ms)
         memory_mb = get_memory_usage()
         line = f"{time.time_ns()} {cpu_perc}% {memory_mb}MB\n"
         print(f"Writing line: {line}")
+
         with open(file_to_write, "a") as f:
             f.write(line)
