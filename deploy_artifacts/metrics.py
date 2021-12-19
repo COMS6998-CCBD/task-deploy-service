@@ -42,9 +42,12 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3:
         interval_ms = int(sys.argv[2])
 
+    print(f"writing to: {file_to_write} and interval_ms: {interval_ms}")
+
     while True:
         cpu_perc = cpu_details(interval_ms)
         memory_mb = get_memory_usage()
-        line = f"{time.time_ns()} {cpu_perc} {memory_mb}\n"
-        with open(file_to_write, "w") as f:
+        line = f"{time.time_ns()} {cpu_perc}% {memory_mb}MB\n"
+        print(f"Writing line: {line}")
+        with open(file_to_write, "a") as f:
             f.write(line)

@@ -63,7 +63,7 @@ class ExitServiceManager:
 
                 DM.copy_logs(docker_container_id, local_user_dir_path.joinpath("stdout.txt"))
                 DM.copy_file(docker_container_id, local_user_dir_path.joinpath("output.tar"), DOCKER_OUTPUT_DIR)
-                DM.copy_file(docker_container_id, local_user_dir_path.joinpath("output.tar"), METRICS_FILE_NAME)
+                DM.copy_file(docker_container_id, local_user_dir_path.joinpath("metrics.txt"), METRICS_FILE_NAME)
                 
                 # CURR: Let's try this in next iteration - let's keep everything local
                 S3M.local_to_s3(s3bucket, destination_prefix, local_user_dir_path)
