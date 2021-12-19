@@ -13,12 +13,12 @@ def get_int_val(cgroup_suffix: str) -> int:
 
 def cpu_details(sleep_interval_ms = 1000) -> float:
     t1 = time.time_ns()
-    c1 = get_int_val("cpuacct.usage")
+    c1 = get_int_val("/cpu/cpuacct.usage")
 
     time.sleep(sleep_interval_ms/1000)
 
     t2 = time.time_ns()
-    c2 = get_int_val("cpuacct.usage")
+    c2 = get_int_val("/cpu/cpuacct.usage")
 
     if t2-t1 == 0:
         return 0.0
