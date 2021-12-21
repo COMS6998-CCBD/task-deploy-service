@@ -1,3 +1,4 @@
+import traceback
 from service.aws.rds_manager import RM
 from service.docker.docker_manager import DM
 from service.aws.s3_manager import S3M
@@ -44,36 +45,55 @@ class ExitServiceManager:
             LOG.info(f"Beginning the copy process")
             exited_executions = RM.get_exited_executions()
             for exited_execution in exited_executions:
-                exec_id = exited_execution["exec_id"]
-                docker_container_id = exited_execution["docker_container_id"]
-                # destination_prefix = exited_execution["destination_s3_prefix"]
-                destination_prefix = exited_execution["task_id"]+"/"+exec_id+"/output"
-                s3bucket = exited_execution["s3_bucket"]
+                try:
+                    exec_id = exited_execution["exec_id"]
+                    docker_container_id = exited_execution["docker_container_id"]
+                    # destination_prefix = exited_execution["destination_s3_prefix"]
+                    destination_prefix = exited_execution["task_id"]+"/"+exec_id+"/output"
+                    s3bucket = exited_execution["s3_bucket"]
 
-                if docker_container_id not in docker_all_exited_cids:
-                    LOG.warning(f"Docker container {docker_container_id} from DB is not present in ec2!!")
-                    continue
+                    if docker_container_id not in docker_all_exited_cids:
+                        LOG.warning(f"Docker container {docker_container_id} from DB is not present in ec2!!")
+                        continue
 
-                LOG.info(f"Working copy for exited_container exec_id: [{exec_id}], container_id: [{docker_container_id}], destination_prefix: [{destination_prefix}] in s3 bucket: [{s3bucket}]")
+                    LOG.info(f"Working copy for exited_container exec_id: [{exec_id}], container_id: [{docker_container_id}], destination_prefix: [{destination_prefix}] in s3 bucket: [{s3bucket}]")
 
-                local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + exec_id + "/output" 
-                local_user_dir_path = Path(local_user_dir_str)
-                LOG.info(f"Removing dir [{local_user_dir_str}]")
-                sh.rmtree(local_user_dir_path, ignore_errors=True)
+                    local_user_dir_str = LOCAL_USER_STAGING_DIR + "/" + exec_id + "/output" 
+                    local_user_dir_path = Path(local_user_dir_str)
+                    LOG.info(f"Removing dir [{local_user_dir_str}]")
+                    sh.rmtree(local_user_dir_path, ignore_errors=True)
 
-                DM.copy_logs(docker_container_id, local_user_dir_path.joinpath("stdout.txt"))
-                DM.copy_file(docker_container_id, local_user_dir_path.joinpath("output.tar"), DOCKER_OUTPUT_DIR)
-                DM.copy_file(docker_container_id, local_user_dir_path.joinpath("metrics.txt"), METRICS_FILE_NAME)
-                DM.copy_file(docker_container_id, local_user_dir_path.joinpath("metrics_output.txt"), METRICS_OUTPUT_FILE_NAME)
-                
-                # CURR: Let's try this in next iteration - let's keep everything local
-                S3M.local_to_s3(s3bucket, destination_prefix, local_user_dir_path)
-                # TODO: Key errors here
-                if cid not in cid_execid_map:
-                    LOG.warning(f"container id {cid} not in map!!!")
-                    continue
-                RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.COPIED)
-                LOG.info(f"Inserted COPIED for [{cid}]")
+
+                    try:
+                        DM.copy_logs(docker_container_id, local_user_dir_path.joinpath("stdout.txt"))
+                    except Exception as e:
+                        traceback.print_exc()
+
+                    try:
+                        DM.copy_file(docker_container_id, local_user_dir_path.joinpath("output.tar"), DOCKER_OUTPUT_DIR)
+                    except Exception as e:
+                        traceback.print_exc()
+
+                    try:
+                        DM.copy_file(docker_container_id, local_user_dir_path.joinpath("metrics.txt"), METRICS_FILE_NAME)
+                    except Exception as e:
+                        traceback.print_exc()
+
+                    try:
+                        DM.copy_file(docker_container_id, local_user_dir_path.joinpath("metrics_output.txt"), METRICS_OUTPUT_FILE_NAME)
+                    except Exception as e:
+                        traceback.print_exc()
+                    
+                    # CURR: Let's try this in next iteration - let's keep everything local
+                    S3M.local_to_s3(s3bucket, destination_prefix, local_user_dir_path)
+                    # TODO: Key errors here
+                    if cid not in cid_execid_map:
+                        LOG.warning(f"container id {cid} not in map!!!")
+                        continue
+                    RM.insert_execution_status(cid_execid_map[cid], EXEC_STATUS.COPIED)
+                    LOG.info(f"Inserted COPIED for [{cid}]")
+                except Exception as eg:
+                    traceback.print_exc()
 
         
             # Remove the containers
