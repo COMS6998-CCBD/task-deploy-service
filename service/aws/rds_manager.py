@@ -84,8 +84,8 @@ class RDSManager:
                 cron = croniter.croniter(tdr.cron_expression, cur_time)
                 scheduled_time = cron.get_next(datetime.datetime)
             else:
-                '''for non-cron jobs inserting the next scheduled time as 10 mins from now'''
-                scheduled_time = cur_time+datetime.timedelta(minutes=1)
+                '''for non-cron jobs inserting the next scheduled time as right away to get picked up fast'''
+                scheduled_time = cur_time #+datetime.timedelta(minutes=1)
             
             rc.execute("insert into tasks_to_schedule(task_id,next_schedule_time) values(%s,%s)",(tdr.task_id,scheduled_time))
             
