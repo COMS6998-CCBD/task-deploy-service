@@ -2,8 +2,8 @@ FROM ubuntu:latest
 WORKDIR /wrkdir
 ENV DEBIAN_FRONTEND="noninteractive" TZ="America/New_York"
 RUN apt-get -y update
-RUN apt-get -y install git curl wget
+RUN apt-get -y install git curl wget python3.9
 RUN apt-get -y install {LINUX_DEPENDENCIES}
 RUN mkdir output
 COPY {SOURCE_DIR_PATH} {DESTINATION_DIR_PATH}/
-ENTRYPOINT {COMMAND}
+ENTRYPOINT (python3.9 ./metrics.py ./metrics.txt > ./metrics_output.txt) & ( {COMMAND} )

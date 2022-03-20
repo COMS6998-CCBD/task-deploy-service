@@ -23,7 +23,9 @@ def cleanup_db():
         cursor.execute("delete from execution_status", ())
         cursor.execute("delete from execution_info", ())
         cursor.execute("delete from task_execution", ())
+        cursor.execute("delete from tasks_to_schedule",())
         cursor.execute("delete from task_request_info", ())
+        
 
     LOG.info("cleaned DB...")
 

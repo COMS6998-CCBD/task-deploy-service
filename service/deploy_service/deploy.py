@@ -73,7 +73,8 @@ def unzip_files(local_user_files_dir_path: Path):
 
 
 def deploy(request: TaskDeployRequest):
-    RM.insert_task(request)
+    '''no longer inserts new task here taken care by submit task'''
+    # RM.insert_task(request)
     RM.insert_execution_id(request.task_id, request.exec_id)
     LOG.info(f"linked task_id [{request.task_id}] to exec_id [{request.exec_id}]")
 
@@ -85,6 +86,9 @@ def deploy(request: TaskDeployRequest):
     S3M.s3_to_local(request.s3_bucket, request.source_s3_prefix, local_user_files_dir_path)
     unzip_files(local_user_files_dir_path)
 
+    # copy metrics script as well
+    sh.copyfile(METRICS_SCRIPT_FILEPATH, local_user_files_dir_path.joinpath("metrics.py"))
+    LOG.info(f"Copied metrics.py to {local_user_files_dir_path}")
     
 
     dockerfile_filepath = prepare_dockerfile(request.command, request.linux_dependencies, "files", request.exec_id)

@@ -15,3 +15,7 @@ source ./credentials/rds_credentials.env
 
 echo "Initiating cleanup"
 python3 cleanup.py
+
+
+echo "Pulling docker ubuntu"
+docker pull ubuntu:latest

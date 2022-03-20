@@ -61,7 +61,7 @@ class DockerManager:
         # delete and then check image list for sanity
         self.client.images.prune()
 
-    def copy_logs_to_file(self, containerId: str, destination_output_filepath: Path):
+    def copy_logs(self, containerId: str, destination_output_filepath: Path):
         LOG.info(f"starting copy_logs_to_file for containerId: [{containerId}] and destination_output_path: [{destination_output_filepath}]")
         container = self.client.containers.get(containerId)
         logs_str = container.logs(stdout=True, stderr=True, timestamps=True)
@@ -71,10 +71,10 @@ class DockerManager:
             f.write(logs_str)
         LOG.info(f"done copy_logs_to_file")
 
-    def copy_output_to_file(self, containerId: str, destination_output_filepath: Path):
+    def copy_file(self, containerId: str, destination_output_filepath: Path, file_path_to_copy: str):
         LOG.info(f"starting copy_output_to_file for containerId: [{containerId}] and destination_output_path: [{destination_output_filepath}]")
         container = self.client.containers.get(containerId)
-        raw_stream, stats = container.get_archive(DOCKER_OUTPUT_DIR)
+        raw_stream, stats = container.get_archive(file_path_to_copy)
         LOG.info(f"Got stats: [{stats}]")
         destination_output_filepath.parent.mkdir(parents=True, exist_ok=True)
         with open(destination_output_filepath, "wb+") as f:
